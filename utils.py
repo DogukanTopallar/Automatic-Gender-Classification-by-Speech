@@ -59,6 +59,7 @@ def load_data(vector_length=128):
         features = np.load(filename)
         X[i] = features
         y[i] = label2int[gender]
+        #ekran görüntüsü var
         
         np.save("results/features", X)
         np.save("results/labels", y)
@@ -86,11 +87,17 @@ def split_data(X, y, test_size=0.1, valid_size=0.1):
 X, y = load_data()
 data = split_data(X, y, test_size=0.1, valid_size=0.1)
    
-
+#relu -> sıfırın altındaki değerlere sıfır, üstündeki değerlere kendi değerini atar.
+#sigmoid -> elde edilen değerleri 0-1 arasında bir değere tutturur.
+#Batch Size -> Küme büyüklüğü (batch_size) bir seferde yapay sinir ağını eğitmek için kullanılacak örnek sayısını belirtir.
+#Epoch -> Devir sayısı.
+#Dense -> Katmandaki düğüm sayısıdır. Modelin esnekliğini artırır.
 def create_model(vector_length=128):
     """256 birimden 64'e 5 gizli yoğun katman. """
     model = Sequential()
-    model.add(Dense(256, input_shape=(vector_length,)))
+    #sıralı model oluşturulur.
+    
+    model.add(Dense(256, input_shape=(vector_length,), activation="relu"))
     model.add(Dropout(0.3))
     model.add(Dense(256, activation="relu"))
     model.add(Dropout(0.3))
@@ -100,11 +107,13 @@ def create_model(vector_length=128):
     model.add(Dropout(0.3))
     model.add(Dense(64, activation="relu"))
     model.add(Dropout(0.3))
-    # one output neuron with sigmoid activation function, 0 means female, 1 means male
+    
+    # sigmoid aktivasyon fonksiyonuna sahip bir çıkış nöronu, 0 kadın, 1 erkek anlamına gelir.
     model.add(Dense(1, activation="sigmoid"))
-    # using binary crossentropy as it's male/female classification (binary)
+    # ikili sınıflandırma oldugundan cross entropy kullanıldı. Doğruluk bakımından incelendi. 
+    # Adam, eğitim verilerine dayalı yinelemeli ağ ağırlıklarını güncellemek için klasik stokastik gradyan iniş prosedürü yerine kullanılabilen bir optimizasyon algoritmasıdır.
     model.compile(loss="binary_crossentropy", metrics=["accuracy"], optimizer="adam")
-    # print summary of the model
+    # modelin özetini yazdırır.
     model.summary()
     return model
 
