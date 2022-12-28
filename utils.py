@@ -92,6 +92,7 @@ data = split_data(X, y, test_size=0.1, valid_size=0.1)
 #Batch Size -> Küme büyüklüğü (batch_size) bir seferde yapay sinir ağını eğitmek için kullanılacak örnek sayısını belirtir.
 #Epoch -> Devir sayısı.
 #Dense -> Katmandaki düğüm sayısıdır. Modelin esnekliğini artırır.
+#Dropout -> Katlı bir inşaat örneği ile açıklanır. Her işin uzmanı belirlenen oranda diğer işi öğrenir ve bir önceki kattan aldığı bilgilerle hata yapılma olasılığını düşürür.
 def create_model(vector_length=128):
     """256 birimden 64'e 5 gizli yoğun katman. """
     model = Sequential()
