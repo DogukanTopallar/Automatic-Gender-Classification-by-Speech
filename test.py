@@ -129,16 +129,16 @@ def record_to_file(path):
 
 def extract_feature(file_name, **kwargs):
     """
-    Extract feature from audio file `file_name`
-        Features supported:
+        Özelliklerin desteklediği öz nitelikler:
             - MFCC (mfcc)
             - Chroma (chroma)
-            - MEL Spectrogram Frequency (mel)
+           *- MEL Spectrogram Frequency (mel)
             - Contrast (contrast)
             - Tonnetz (tonnetz)
-        e.g:
+        ***
         `features = extract_feature(path, mel=True, mfcc=True)`
     """
+    #**kwargs parametreleri
     mfcc = kwargs.get("mfcc")
     chroma = kwargs.get("chroma")
     mel = kwargs.get("mel")
@@ -167,32 +167,36 @@ def extract_feature(file_name, **kwargs):
 
 
 if __name__ == "__main__":
-    # load the saved model (after training)
-    # model = pickle.load(open("result/mlp_classifier.model", "rb"))
+    # kaydedilen modeli yükle (eğitimden sonra)
+    
     from utils import load_data, split_data, create_model
     import argparse
-    parser = argparse.ArgumentParser(description="""Gender recognition script, this will load the model you trained, 
-                                    and perform inference on a sample you provide (either using your voice or a file)""")
-    parser.add_argument("-f", "--file", help="The path to the file, preferred to be in WAV format")
+    parser = argparse.ArgumentParser(description="""Cinsiyet tanımlama çalışması sağladığınız ses dosyası üzerinden cinsiyet tahmini yapacaktır.""")
+    parser.add_argument("-f", "--file")
     args = parser.parse_args()
     file = args.file
-    # construct the model
+    
+    # İnşa edilen model
     model = create_model()
-    # load the saved/trained weights
+    
+    # model ve eğitim ağırlıkları yüklenir.
     model.load_weights("results/model.h5")
     if not file or not os.path.isfile(file):
-        # if file not provided, or it doesn't exist, use your voice
+        # test ses dosyası yok ise, konuşma sesi eklenir.
         print("Please talk")
-        # put the file name here
+        # eklenen sesin ismi 
         file = "test.wav"
-        # record the file (start talking)
+        
+        # kayıt için konuşma başlar.
         record_to_file(file)
-    # extract features and reshape it
+        
+    # özellik çıkarımı mel özelliğine göre yapılır
     features = extract_feature(file, mel=True).reshape(1, -1)
-    # predict the gender!
+    
+    # Cinsiyet tayini.
     male_prob = model.predict(features)[0][0]
     female_prob = 1 - male_prob
     gender = "male" if male_prob > female_prob else "female"
-    # show the result!
+    # Sonuçlar: 
     print("Result:", gender)
     print(f"Probabilities:     Male: {male_prob*100:.2f}%    Female: {female_prob*100:.2f}%")

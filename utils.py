@@ -5,12 +5,12 @@ Created on Tue Dec 13 00:00:18 2022
 @author: DOGUKAN
 """
 import pandas as pd #dataset işlemleri
-import numpy as np
+import numpy as np #dizi ve matematiksel işlemler
 import os #dizin işlemleri & işletim sistemi işlemleri
-import tqdm
+import tqdm #console işlemleri zipleme ve progress bar için
 from sklearn.model_selection import train_test_split #test eğitim ayrımı
-from tensorflow.keras.layers import Dense, Dropout #LSTM
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout #Model Oluşturma
+from tensorflow.keras.models import Sequential #Model İnşası
 
 
 #etiketleri 1-0 olarak değiştirecek dictionary oluşturuluyor.
@@ -59,7 +59,6 @@ def load_data(vector_length=128):
         features = np.load(filename)
         X[i] = features
         y[i] = label2int[gender]
-        #ekran görüntüsü var
         
         np.save("results/features", X)
         np.save("results/labels", y)
@@ -113,6 +112,7 @@ def create_model(vector_length=128):
     model.add(Dense(1, activation="sigmoid"))
     # ikili sınıflandırma oldugundan cross entropy kullanıldı. Doğruluk bakımından incelendi. 
     # Adam, eğitim verilerine dayalı yinelemeli ağ ağırlıklarını güncellemek için klasik stokastik gradyan iniş prosedürü yerine kullanılabilen bir optimizasyon algoritmasıdır.
+    #adam eşzamanlı ağırlık parametre güncellemesi yapar
     model.compile(loss="binary_crossentropy", metrics=["accuracy"], optimizer="adam")
     # modelin özetini yazdırır.
     model.summary()
