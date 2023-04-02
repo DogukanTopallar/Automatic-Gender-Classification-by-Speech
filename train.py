@@ -1,48 +1,34 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Dec 13 01:07:15 2022
-
-@author: DOGUKAN
-"""
-
-#import os
-from tensorflow.keras.callbacks import  TensorBoard, EarlyStopping #ModelCheckpoint
-#Ölçümleri görüntülemek için kullanılır.
+import os
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping
 
 from utils import load_data, split_data, create_model
-#utils'de oluşturulan fonksiyonlar çağırılır.
 
+# load the dataset
 X, y = load_data()
-#features ve labels çağırılır.
-
+# split the data into training, validation and testing sets
 data = split_data(X, y, test_size=0.1, valid_size=0.1)
-# train, validation, test verileri ayrılır.
-
+# construct the model
 model = create_model()
-#model inşa edilir.
 
+# use tensorboard to view metrics
 tensorboard = TensorBoard(log_dir="logs")
-# tenserboard kullanarak logları kaydeder.
-
+# define early stopping to stop training after 5 epochs of not improving
 early_stopping = EarlyStopping(mode="min", patience=5, restore_best_weights=True)
-#Son 5 val_loss değeri arttıkça eğitimi durdurur.
 
 batch_size = 64
-# parametre güncellemesinin gerçekleştiği ağa verilen alt örneklerin sayısıdır. Bir seferde kullanılacak örnek sayısı.
-
 epochs = 100
-#eğitim adımları & devir sayısı
 
-
+# train the model using the training set and validating using validation set
 model.fit(data["X_train"], data["y_train"], epochs=epochs, batch_size=batch_size, validation_data=(data["X_valid"], data["y_valid"]),
           callbacks=[tensorboard, early_stopping])
-#Modeli eğitim setini kullanarak eğitir, valid setini kullanarak doğrulama yapar.
 
-# Modeli model.h5 adı ile kaydeder.
+# save the model to a file
 model.save("results/model.h5")
 
-# Model değerleri hesaplanıyor.
+# evaluating the model using the testing set
 print(f"Evaluating the model using {len(data['X_test'])} samples...")
 loss, accuracy = model.evaluate(data["X_test"], data["y_test"], verbose=0)
 print(f"Loss: {loss:.4f}")
 print(f"Accuracy: {accuracy*100:.2f}%")
+
+

@@ -1,78 +1,63 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Dec 13 00:00:18 2022
-
-@author: DOGUKAN
-"""
-import pandas as pd #dataset işlemleri
-import numpy as np #dizi ve matematiksel işlemler
-import os #dizin işlemleri & işletim sistemi işlemleri
-import tqdm #console işlemleri zipleme ve progress bar için
-from sklearn.model_selection import train_test_split #test eğitim ayrımı
-from tensorflow.keras.layers import Dense, Dropout #Model Oluşturma
-from tensorflow.keras.models import Sequential #Model İnşası
+import pandas as pd
+import numpy as np
+import os
+import tqdm
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, LSTM, Dropout
+from sklearn.model_selection import train_test_split
 
 
-#etiketleri 1-0 olarak değiştirecek dictionary oluşturuluyor.
+
 label2int = {
     "male": 1,
     "female": 0
 }
 
-def load_data(vector_length=128):
-    if not os.path.isdir(r"C:\Users\Dogukan\Desktop\DERSLER\BM YÜKSEK LİSANS\ÇALIŞMALAR\ANACONDA-SPYDER\GenderClassificationByVoice\Automatic-Gender-Classification-by-Speech\results"):
-        os.mkdir(r"C:\Users\Dogukan\Desktop\DERSLER\BM YÜKSEK LİSANS\ÇALIŞMALAR\ANACONDA-SPYDER\GenderClassificationByVoice\Automatic-Gender-Classification-by-Speech\results")
-        #os.path.isdir -> parametre olarak gönderilen path'in dizin olup olmadığını kontrol ediyor.
-        #os.mkdir -> yeni dizin oluşturmayı sağlıyor.
-        
-    if os.path.isfile(r"C:\Users\Dogukan\Desktop\DERSLER\BM YÜKSEK LİSANS\ÇALIŞMALAR\ANACONDA-SPYDER\GenderClassificationByVoice\Automatic-Gender-Classification-by-Speech\results\features.npy") and os.path.isfile(r"C:\Users\Dogukan\Desktop\DERSLER\BM YÜKSEK LİSANS\ÇALIŞMALAR\ANACONDA-SPYDER\GenderClassificationByVoice\Automatic-Gender-Classification-by-Speech\results\labels.npy"):
-        #os.path.isfile -> verilen yolun gerçek bir dosya yolu olup olmadığını kontrol eder.
-        
-        X = np.load(r"C:\Users\Dogukan\Desktop\DERSLER\BM YÜKSEK LİSANS\ÇALIŞMALAR\ANACONDA-SPYDER\GenderClassificationByVoice\Automatic-Gender-Classification-by-Speech\results\features.npy")
-        y = np.load(r"C:\Users\Dogukan\Desktop\DERSLER\BM YÜKSEK LİSANS\ÇALIŞMALAR\ANACONDA-SPYDER\GenderClassificationByVoice\Automatic-Gender-Classification-by-Speech\results\labels.npy")
-        return X, y
-    
-    df = pd.read_csv(r"C:\Users\Dogukan\Desktop\DERSLER\BM YÜKSEK LİSANS\ÇALIŞMALAR\ANACONDA-SPYDER\GenderClassificationByVoice\Automatic-Gender-Classification-by-Speech\balanced-all.csv")
 
-    
+def load_data(vector_length=128):
+    """A function to load gender recognition dataset from `data` folder
+    After the second run, this will load from results/features.npy and results/labels.npy files
+    as it is much faster!"""
+    # make sure results folder exists
+    if not os.path.isdir("results"):
+        os.mkdir("results")
+    # if features & labels already loaded individually and bundled, load them from there instead
+    if os.path.isfile("results/features.npy") and os.path.isfile("results/labels.npy"):
+        X = np.load("results/features.npy")
+        y = np.load("results/labels.npy")
+        return X, y
+    # read dataframe
+    df = pd.read_csv("balanced-all.csv")
+    # get total samples
     n_samples = len(df)
-    # Toplam örnek sayısını getirir
-    
+    # get total male samples
     n_male_samples = len(df[df['gender'] == 'male'])
-    # Toplam erkek örnek sayısını getirir
-    
+    # get total female samples
     n_female_samples = len(df[df['gender'] == 'female'])
-    # Toplam kadın örnek sayısını getirir
-    
-    print("Toplam Örnek Sayısı:", n_samples)
-    print("Toplam Erkek Örnek Sayısı:", n_male_samples)
-    print("Toplam Kadın Örnek Sayısı:", n_female_samples)
-    
-    
+    print("Total samples:", n_samples)
+    print("Total male samples:", n_male_samples)
+    print("Total female samples:", n_female_samples)
+    # initialize an empty array for all audio features
     X = np.zeros((n_samples, vector_length))
-    #Belirlenen vektör uzunluğunda tüm ses örnekleri için boş bir dizi oluşturulur.
-    
+    # initialize an empty array for all audio labels (1 for male and 0 for female)
     y = np.zeros((n_samples, 1))
-    #Tüm ses etiketleri için boş bir dizi başlatılır.
-    
     for i, (filename, gender) in tqdm.tqdm(enumerate(zip(df['filename'], df['gender'])), "Loading data", total=n_samples):
         features = np.load(filename)
         X[i] = features
         y[i] = label2int[gender]
-        
-        np.save("results/features", X)
-        np.save("results/labels", y)
-        return X, y
+    # save the audio features and labels into files
+    # so we won't load each one of them next run
+    np.save("results/features", X)
+    np.save("results/labels", y)
+    return X, y
+
 
 def split_data(X, y, test_size=0.1, valid_size=0.1):
-#%80 train_set, %10 test, %10 valid(model performansını doğrulamak için kullanılır) olarak ayrılır.
-    
+    # split training set and testing set
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=7)
-    #Ham veri içerisinden %10'u test olacak şekilde train ve test verilerini ayırır.
-    
+    # split training set and validation set
     X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=valid_size, random_state=7)
-    #Ayrılan veriler içerisinden %10'u valid(model doğrulamak için) olacak şekilde train ve valid verilerini ayırır.
-    
+    # return a dictionary of values
     return {
         "X_train": X_train,
         "X_valid": X_valid,
@@ -81,23 +66,12 @@ def split_data(X, y, test_size=0.1, valid_size=0.1):
         "y_valid": y_valid,
         "y_test": y_test
     }
-    # Bir dictionary olarak ayrılmış verileri saklar.
 
-X, y = load_data()
-data = split_data(X, y, test_size=0.1, valid_size=0.1)
-   
-#relu -> sıfırın altındaki değerlere sıfır, üstündeki değerlere kendi değerini atar.
-#sigmoid -> elde edilen değerleri 0-1 arasında bir değere tutturur.
-#Batch Size -> Küme büyüklüğü (batch_size) bir seferde yapay sinir ağını eğitmek için kullanılacak örnek sayısını belirtir.
-#Epoch -> Devir sayısı.
-#Dense -> Katmandaki düğüm sayısıdır. Modelin esnekliğini artırır.
-#Dropout -> Katlı bir inşaat örneği ile açıklanır. Her işin uzmanı belirlenen oranda diğer işi öğrenir ve bir önceki kattan aldığı bilgilerle hata yapılma olasılığını düşürür.
+
 def create_model(vector_length=128):
-    """256 birimden 64'e 5 gizli yoğun katman. """
+    """5 hidden dense layers from 256 units to 64, not the best model, but not bad."""
     model = Sequential()
-    #sıralı model oluşturulur.
-    
-    model.add(Dense(256, input_shape=(vector_length,), activation="relu"))
+    model.add(Dense(256, input_shape=(vector_length,)))
     model.add(Dropout(0.3))
     model.add(Dense(256, activation="relu"))
     model.add(Dropout(0.3))
@@ -107,20 +81,10 @@ def create_model(vector_length=128):
     model.add(Dropout(0.3))
     model.add(Dense(64, activation="relu"))
     model.add(Dropout(0.3))
-    
-    # sigmoid aktivasyon fonksiyonuna sahip bir çıkış nöronu, 0 kadın, 1 erkek anlamına gelir.
+    # one output neuron with sigmoid activation function, 0 means female, 1 means male
     model.add(Dense(1, activation="sigmoid"))
-    # ikili sınıflandırma oldugundan cross entropy kullanıldı. Doğruluk bakımından incelendi. 
-    # Adam, eğitim verilerine dayalı yinelemeli ağ ağırlıklarını güncellemek için klasik stokastik gradyan iniş prosedürü yerine kullanılabilen bir optimizasyon algoritmasıdır.
-    #adam eşzamanlı ağırlık parametre güncellemesi yapar
+    # using binary crossentropy as it's male/female classification (binary)
     model.compile(loss="binary_crossentropy", metrics=["accuracy"], optimizer="adam")
-    # modelin özetini yazdırır.
+    # print summary of the model
     model.summary()
     return model
-
-
-
-
-
-
-
